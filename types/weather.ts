@@ -4,6 +4,8 @@ export interface WeatherData {
   hourly: {
     time: string[];
     temperature_2m: number[];
+    weathercode: number[];
+    relativehumidity_2m: number[];
   };
 }
 

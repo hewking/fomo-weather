@@ -2,13 +2,15 @@ export interface WeatherData {
   hourly: {
     time: string[];
     temperature_2m: number[];
+    weathercode: number[];
+    relativehumidity_2m: number[];
   };
 }
 
 export async function fetchWeatherData(latitude: number, longitude: number): Promise<WeatherData> {
   try {
     const response = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m`
+      `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,weathercode,relativehumidity_2m`
     );
 
     if (!response.ok) {
