@@ -1,9 +1,17 @@
-import React, { useState, useRef } from 'react';
-import { View, Dimensions, StyleSheet, TouchableOpacity, Text, Animated, ScrollView } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import { View, Dimensions, StyleSheet, TouchableOpacity, Text, ScrollView } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { useWeatherStore } from '../store/weatherStore';
 import { theme } from '../constants/theme';
 import { Card } from './Card';
+import { GestureHandlerRootView, PinchGestureHandler, PinchGestureHandlerEventPayload, PinchGestureHandlerStateChangeEvent, State } from 'react-native-gesture-handler';
+import Animated, { 
+  useAnimatedGestureHandler, 
+  useAnimatedStyle, 
+  useSharedValue, 
+  withSpring,
+  runOnJS
+} from 'react-native-reanimated';
 
 const screenWidth = Dimensions.get('window').width;
 const chartWidth = screenWidth - theme.spacing.md * 2;
@@ -11,35 +19,54 @@ const chartWidth = screenWidth - theme.spacing.md * 2;
 export function WeatherChart() {
   const { weatherData } = useWeatherStore();
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [visibleDataPoints, setVisibleDataPoints] = useState(24);
+  const fadeAnim = useSharedValue(0);
+  const scaleAnim = useSharedValue(1);
+
+  // 用于捏合缩放的动画值
+  const scale = useSharedValue(1);
+  const focalX = useSharedValue(0);
+  const focalY = useSharedValue(0);
+
+  const pinchHandler = useAnimatedGestureHandler({
+    onActive: (event: any) => {
+      scale.value = event.scale;
+      focalX.value = event.focalX;
+      focalY.value = event.focalY;
+    },
+    onEnd: () => {
+      scale.value = withSpring(1);
+    },
+  });
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: fadeAnim.value,
+      transform: [
+        { translateX: focalX.value },
+        { translateY: focalY.value },
+        { scale: scale.value },
+        { translateX: -focalX.value },
+        { translateY: -focalY.value },
+      ],
+    };
+  });
 
   React.useEffect(() => {
-    fadeAnim.setValue(0);
-    scaleAnim.setValue(1);
+    fadeAnim.value = 0;
+    scaleAnim.value = 1;
     
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    fadeAnim.value = withSpring(1);
+    scaleAnim.value = withSpring(1);
   }, [weatherData]);
 
   if (!weatherData) return null;
 
-  // 只显示24小时的数据
-  const timeLabels = weatherData.hourly.time.slice(0, 24).map((time) => 
+  // 根据可见数据点数量调整显示的数据
+  const timeLabels = weatherData.hourly.time.slice(0, visibleDataPoints).map((time) => 
     new Date(time).toLocaleTimeString([], { hour: '2-digit' })
   );
-  const tempData = weatherData.hourly.temperature_2m.slice(0, 24);
+  const tempData = weatherData.hourly.temperature_2m.slice(0, visibleDataPoints);
 
   const data = {
     labels: timeLabels,
@@ -57,27 +84,27 @@ export function WeatherChart() {
   const tempTrend = tempDiff > 0 ? '↑' : tempDiff < 0 ? '↓' : '→';
 
   const handleDataPointPress = (index: number) => {
-    Animated.sequence([
-      Animated.spring(scaleAnim, {
-        toValue: 0.95,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-    ]).start();
-    
+    scaleAnim.value = withSpring(0.95);
+    scaleAnim.value = withSpring(1);
     setSelectedIndex(index);
   };
 
+  const handlePinchGestureEvent = useCallback((event: PinchGestureHandlerStateChangeEvent) => {
+    if (event.nativeEvent.state === State.END) {
+      const newScale = event.nativeEvent.scale;
+      if (newScale > 1) {
+        // 放大时显示更多数据点
+        setVisibleDataPoints(prev => Math.min(prev + 6, 48));
+      } else if (newScale < 1) {
+        // 缩小时显示更少数据点
+        setVisibleDataPoints(prev => Math.max(prev - 6, 12));
+      }
+    }
+  }, []);
+
   return (
     <Card style={styles.cardContainer}>
-      <Animated.View style={[styles.container, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+      <Animated.View style={[styles.container, { transform: [{ scale: scaleAnim }] }]}>
         <View style={styles.header}>
           <Text style={styles.title}>Temperature Trend</Text>
           <TouchableOpacity
@@ -92,59 +119,65 @@ export function WeatherChart() {
             </Text>
           </TouchableOpacity>
         </View>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.chartContainer}
-        >
-          <LineChart
-            data={data}
-            width={Math.max(chartWidth, timeLabels.length * 40)}
-            height={200}
-            withHorizontalLines={true}
-            withVerticalLines={false}
-            withDots={true}
-            withShadow={false}
-            withInnerLines={false}
-            withOuterLines={true}
-            chartConfig={{
-              backgroundColor: 'transparent',
-              backgroundGradientFrom: theme.colors.background,
-              backgroundGradientTo: theme.colors.background,
-              backgroundGradientFromOpacity: 1,
-              backgroundGradientToOpacity: 0.5,
-              decimalPlaces: 1,
-              color: (opacity = 1) => `rgba(65, 145, 255, ${opacity})`,
-              labelColor: (opacity = 0.5) => `rgba(0, 0, 0, ${opacity})`,
-              style: {
-                borderRadius: 16,
-              },
-              propsForDots: {
-                r: '4',
-                strokeWidth: '2',
-                stroke: '#4191FF',
-              },
-              propsForBackgroundLines: {
-                strokeWidth: 1,
-                strokeDasharray: '6,3',
-                stroke: 'rgba(0,0,0,0.1)',
-              },
-              fillShadowGradientFrom: '#4191FF',
-              fillShadowGradientFromOpacity: 0.3,
-              fillShadowGradientTo: '#4191FF',
-              fillShadowGradientToOpacity: 0.01,
-            }}
-            bezier
-            style={styles.chart}
-            onDataPointClick={({ index }) => handleDataPointPress(index)}
-            getDotProps={(value, index) => ({
-              r: index === selectedIndex ? '6' : '4',
-              strokeWidth: index === selectedIndex ? '3' : '2',
-              stroke: index === selectedIndex ? '#1E90FF' : '#4191FF',
-              fill: '#FFF',
-            })}
-          />
-        </ScrollView>
+        <GestureHandlerRootView style={styles.chartWrapper}>
+          <PinchGestureHandler onGestureEvent={pinchHandler} onHandlerStateChange={handlePinchGestureEvent}>
+            <Animated.View style={[styles.chartContainer, animatedStyle]}>
+              <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chartScrollContainer}
+              >
+                <LineChart
+                  data={data}
+                  width={Math.max(chartWidth, timeLabels.length * 40)}
+                  height={200}
+                  withHorizontalLines={true}
+                  withVerticalLines={false}
+                  withDots={true}
+                  withShadow={false}
+                  withInnerLines={false}
+                  withOuterLines={true}
+                  chartConfig={{
+                    backgroundColor: 'transparent',
+                    backgroundGradientFrom: theme.colors.background,
+                    backgroundGradientTo: theme.colors.background,
+                    backgroundGradientFromOpacity: 1,
+                    backgroundGradientToOpacity: 0.5,
+                    decimalPlaces: 1,
+                    color: (opacity = 1) => `rgba(65, 145, 255, ${opacity})`,
+                    labelColor: (opacity = 0.5) => `rgba(0, 0, 0, ${opacity})`,
+                    style: {
+                      borderRadius: 16,
+                    },
+                    propsForDots: {
+                      r: '4',
+                      strokeWidth: '2',
+                      stroke: '#4191FF',
+                    },
+                    propsForBackgroundLines: {
+                      strokeWidth: 1,
+                      strokeDasharray: '6,3',
+                      stroke: 'rgba(0,0,0,0.1)',
+                    },
+                    fillShadowGradientFrom: '#4191FF',
+                    fillShadowGradientFromOpacity: 0.3,
+                    fillShadowGradientTo: '#4191FF',
+                    fillShadowGradientToOpacity: 0.01,
+                  }}
+                  bezier
+                  style={styles.chart}
+                  onDataPointClick={({ index }) => handleDataPointPress(index)}
+                  getDotProps={(value, index) => ({
+                    r: index === selectedIndex ? '6' : '4',
+                    strokeWidth: index === selectedIndex ? '3' : '2',
+                    stroke: index === selectedIndex ? '#1E90FF' : '#4191FF',
+                    fill: '#FFF',
+                  })}
+                />
+              </ScrollView>
+            </Animated.View>
+          </PinchGestureHandler>
+        </GestureHandlerRootView>
         <View style={styles.selectedTemp}>
           <Text style={styles.selectedTempValue}>
             {selectedTemp.toFixed(1)}°C
@@ -175,6 +208,9 @@ export function WeatherChart() {
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: '#4ECDC4' }]} />
             <Text style={styles.legendText}>Falling</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <Text style={styles.legendText}>Pinch to zoom</Text>
           </View>
         </View>
       </Animated.View>
@@ -213,7 +249,13 @@ const styles = StyleSheet.create({
     color: '#4191FF',
     fontSize: 14,
   },
+  chartWrapper: {
+    overflow: 'hidden',
+  },
   chartContainer: {
+    overflow: 'hidden',
+  },
+  chartScrollContainer: {
     paddingRight: theme.spacing.sm,
   },
   chart: {
