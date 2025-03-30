@@ -18,4 +18,7 @@ export interface WeatherState {
   weatherData: WeatherData | null;
   isLoading: boolean;
   error: string | null;
+  setLocation: (location: Location) => void;
+  fetchWeather: () => Promise<void>;
+  clearError: () => void;
 } 

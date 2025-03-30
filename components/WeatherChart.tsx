@@ -1,9 +1,12 @@
 import React from 'react';
-import { View, Dimensions } from 'react-native';
+import { View, Dimensions, StyleSheet } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { useWeatherStore } from '../store/weatherStore';
+import { theme } from '../constants/theme';
+import { Card } from './Card';
 
 const screenWidth = Dimensions.get('window').width;
+const chartWidth = screenWidth - theme.spacing.md * 4;
 
 export function WeatherChart() {
   const { weatherData } = useWeatherStore();
@@ -20,27 +23,41 @@ export function WeatherChart() {
   };
 
   return (
-    <View style={{ marginVertical: 8 }}>
+    <Card>
       <LineChart
         data={data}
-        width={screenWidth - 32}
+        width={chartWidth}
         height={220}
         chartConfig={{
-          backgroundColor: '#ffffff',
-          backgroundGradientFrom: '#ffffff',
-          backgroundGradientTo: '#ffffff',
+          backgroundColor: theme.colors.background,
+          backgroundGradientFrom: theme.colors.background,
+          backgroundGradientTo: theme.colors.background,
           decimalPlaces: 1,
           color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+          labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
           style: {
-            borderRadius: 16,
+            borderRadius: theme.layout.borderRadius,
+          },
+          propsForDots: {
+            r: '6',
+            strokeWidth: '2',
+            stroke: theme.colors.primary,
+          },
+          propsForBackgroundLines: {
+            strokeDasharray: '',
+            stroke: theme.colors.border,
           },
         }}
         bezier
-        style={{
-          marginVertical: 8,
-          borderRadius: 16,
-        }}
+        style={styles.chart}
       />
-    </View>
+    </Card>
   );
-} 
+}
+
+const styles = StyleSheet.create({
+  chart: {
+    marginVertical: theme.spacing.sm,
+    borderRadius: theme.layout.borderRadius,
+  },
+}); 

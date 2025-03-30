@@ -1,12 +1,15 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { WeatherChart } from '../../components/WeatherChart';
 import { WeatherTable } from '../../components/WeatherTable';
+import { CurrentWeather } from '../../components/CurrentWeather';
 import { useWeatherStore } from '../../store/weatherStore';
+import { theme } from '../../constants/theme';
 
 export default function WeatherScreen() {
-  const { fetchWeather, isLoading, error, weatherData } = useWeatherStore();
+  const { fetchWeather, isLoading, error } = useWeatherStore();
 
   useEffect(() => {
     fetchWeather();
@@ -18,6 +21,7 @@ export default function WeatherScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar style="dark" />
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />
@@ -25,7 +29,7 @@ export default function WeatherScreen() {
       >
         {isLoading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
+            <ActivityIndicator size="large" color={theme.colors.primary} />
           </View>
         ) : error ? (
           <View style={styles.errorContainer}>
@@ -34,20 +38,13 @@ export default function WeatherScreen() {
               Tap to retry
             </Text>
           </View>
-        ) : weatherData ? (
+        ) : (
           <>
-            <View style={styles.currentWeather}>
-              <Text style={styles.temperature}>
-                {weatherData.hourly.temperature_2m[0].toFixed(1)}°C
-              </Text>
-              <Text style={styles.time}>
-                {new Date(weatherData.hourly.time[0]).toLocaleTimeString()}
-              </Text>
-            </View>
+            <CurrentWeather />
             <WeatherChart />
             <WeatherTable />
           </>
-        ) : null}
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -56,7 +53,7 @@ export default function WeatherScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -71,24 +68,12 @@ const styles = StyleSheet.create({
     minHeight: 400,
   },
   errorText: {
-    color: '#FF3B30',
-    fontSize: 16,
-    marginBottom: 8,
+    ...theme.typography.body,
+    color: theme.colors.error,
+    marginBottom: theme.spacing.sm,
   },
   retryText: {
-    color: '#007AFF',
-    fontSize: 16,
-  },
-  currentWeather: {
-    alignItems: 'center',
-    padding: 20,
-  },
-  temperature: {
-    fontSize: 48,
-    fontWeight: 'bold',
-  },
-  time: {
-    fontSize: 16,
-    color: '#666',
+    ...theme.typography.body,
+    color: theme.colors.primary,
   },
 });
