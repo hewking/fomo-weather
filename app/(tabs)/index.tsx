@@ -26,16 +26,16 @@ export default function WeatherScreen() {
     const hour = new Date().getHours();
     if (hour >= 6 && hour < 12) {
       // Morning: Warm sunrise colors
-      return ['#FF8C42', '#FFB566', '#FFF1E6'];
+      return ['#FF8C42', '#FFB566', '#FFF1E6'] as const;
     } else if (hour >= 12 && hour < 18) {
       // Afternoon: Blue sky colors
-      return ['#4A90E2', '#81C3F5', '#C4E3FF'];
+      return ['#4A90E2', '#81C3F5', '#C4E3FF'] as const;
     } else if (hour >= 18 && hour < 20) {
       // Evening: Sunset colors
-      return ['#FF5F6D', '#FFC371', '#FFE4B5'];
+      return ['#FF5F6D', '#FFC371', '#FFE4B5'] as const;
     } else {
       // Night: Dark blue colors
-      return ['#2C3E50', '#3498DB', '#85C1E9'];
+      return ['#2C3E50', '#3498DB', '#85C1E9'] as const;
     }
   };
 
