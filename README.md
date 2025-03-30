@@ -23,6 +23,7 @@ A beautiful and intuitive weather app built with React Native and Expo, providin
 - React Native Reanimated
 - React Native Gesture Handler
 - Open-Meteo API
+- Vercel (Web Deployment)
 
 ## 📦 Prerequisites
 
@@ -31,12 +32,13 @@ A beautiful and intuitive weather app built with React Native and Expo, providin
 - Expo CLI
 - iOS Simulator (for iOS development)
 - Android Studio (for Android development)
+- Vercel CLI (for deployment)
 
 ## 🚀 Getting Started
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/hewking/fomo-weather.git
+   git clone https://github.com/yourusername/fomo-weather.git
    cd fomo-weather
    ```
 
@@ -186,6 +188,51 @@ The app uses the following configuration files:
    }
    ```
 
+3. `vercel.json`:
+   ```json
+   {
+     "buildCommand": "npm run build:web",
+     "outputDirectory": "dist",
+     "framework": "expo",
+     "rewrites": [
+       {
+         "source": "/(.*)",
+         "destination": "/index.html"
+       }
+     ],
+     "env": {
+       "GOOGLE_MAPS_API_KEY": "@google_maps_api_key"
+     }
+   }
+   ```
+
+### Deploying to Vercel
+
+1. Install Vercel CLI:
+   ```bash
+   npm install -g vercel
+   ```
+
+2. Login to Vercel:
+   ```bash
+   vercel login
+   ```
+
+3. Add environment variables to Vercel:
+   ```bash
+   vercel env add GOOGLE_MAPS_API_KEY
+   ```
+
+4. Deploy:
+   ```bash
+   vercel
+   ```
+
+5. For production deployment:
+   ```bash
+   vercel --prod
+   ```
+
 ### Troubleshooting
 
 If you encounter build issues:
@@ -203,7 +250,8 @@ If you encounter build issues:
 
 3. Check environment variables:
    - Ensure `.env` file exists with required variables
-   - Verify environment variables are properly loaded
+   - Verify environment variables are properly loaded in Vercel
+   - Check Vercel deployment logs for any errors
 
 ## 🤝 Contributing
 
@@ -222,3 +270,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Open-Meteo API](https://open-meteo.com/) for providing free weather data
 - [Expo](https://expo.dev/) for the amazing development platform
 - [React Native](https://reactnative.dev/) for the cross-platform framework
+- [Vercel](https://vercel.com/) for the deployment platform
