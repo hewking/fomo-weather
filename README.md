@@ -119,15 +119,91 @@ This app uses the Open-Meteo API for weather data:
 
 ## 📦 Building for Production
 
-1. Build for iOS:
+### Web Build
+
+1. Development build:
    ```bash
-   eas build --platform ios
+   npm run build:web
    ```
 
-2. Build for Android:
+2. Production build (unminified):
    ```bash
-   eas build --platform android
+   npm run build:web:prod
    ```
+
+3. Preview build locally:
+   ```bash
+   npm run serve:web
+   ```
+
+Build output will be in the `dist` directory.
+
+### Build Configuration
+
+The app uses the following configuration files:
+
+1. `app.config.js`:
+   ```javascript
+   module.exports = {
+     name: 'FOMO Weather',
+     slug: 'fomo-weather',
+     version: '1.0.0',
+     orientation: 'portrait',
+     icon: './assets/icon.png',
+     userInterfaceStyle: 'automatic',
+     splash: {
+       image: './assets/splash.png',
+       resizeMode: 'contain',
+       backgroundColor: '#ffffff'
+     },
+     assetBundlePatterns: ['**/*'],
+     ios: {
+       supportsTablet: true
+     },
+     android: {
+       adaptiveIcon: {
+         foregroundImage: './assets/adaptive-icon.png',
+         backgroundColor: '#ffffff'
+       }
+     },
+     web: {
+       favicon: './assets/favicon.png',
+       bundler: 'metro'
+     },
+     plugins: ['expo-router'],
+     scheme: 'fomo-weather'
+   };
+   ```
+
+2. `package.json` scripts:
+   ```json
+   {
+     "scripts": {
+       "build:web": "expo export",
+       "build:web:prod": "expo export --no-minify",
+       "serve:web": "serve dist"
+     }
+   }
+   ```
+
+### Troubleshooting
+
+If you encounter build issues:
+
+1. Clear cache:
+   ```bash
+   expo start --clear
+   ```
+
+2. Reinstall dependencies:
+   ```bash
+   rm -rf node_modules
+   npm install
+   ```
+
+3. Check environment variables:
+   - Ensure `.env` file exists with required variables
+   - Verify environment variables are properly loaded
 
 ## 🤝 Contributing
 
