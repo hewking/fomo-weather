@@ -5,10 +5,11 @@
     "jsx": "react-native",
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
-    }
+      "@/*": ["./*"]
+    },
+    "moduleResolution": "node",
+    "allowJs": true,
+    "esModuleInterop": true
   },
   "include": [
     "**/*.ts",

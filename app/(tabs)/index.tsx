@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, RefreshControl, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -12,11 +12,22 @@ import { useWeatherStore } from '../../store/weatherStore';
 import { theme } from '../../constants/theme';
 
 export default function WeatherScreen() {
-  const { fetchWeather, isLoading, error } = useWeatherStore();
+  const { fetchWeather, isLoading, error, weatherData, location } = useWeatherStore();
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     fetchWeather();
   }, []);
+
+  useEffect(() => {
+    if (weatherData && location) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [weatherData, location]);
 
   const onRefresh = React.useCallback(() => {
     fetchWeather();
@@ -39,6 +50,14 @@ export default function WeatherScreen() {
     }
   };
 
+  const getCurrentTime = () => {
+    return new Date().toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
   return (
     <LinearGradient 
       colors={getTimeBasedColors()}
@@ -46,15 +65,28 @@ export default function WeatherScreen() {
     >
       <StatusBar style="light" />
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.headerLocation}>Current Location</Text>
-            <Text style={styles.headerTitle}>San Francisco</Text>
+        <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
+          <View style={styles.locationContainer}>
+            <View style={styles.locationHeader}>
+              <MaterialCommunityIcons name="map-marker" size={20} color="rgba(255,255,255,0.8)" />
+              <Text style={styles.headerLocation}>Current Location</Text>
+            </View>
+            <View style={styles.locationDetails}>
+              <Text style={styles.headerTitle}>{location?.city || 'Loading...'}</Text>
+              <Text style={styles.headerSubtitle}>
+                {location ? `${location.state}, ${location.country}` : 'Getting location...'}
+              </Text>
+            </View>
+            <Text style={styles.currentTime}>{getCurrentTime()}</Text>
           </View>
-          <TouchableOpacity style={styles.refreshButton} onPress={fetchWeather}>
+          <TouchableOpacity 
+            style={styles.refreshButton} 
+            onPress={fetchWeather}
+            activeOpacity={0.7}
+          >
             <MaterialCommunityIcons name="refresh" size={24} color="#FFF" />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
         <ScrollView
           style={styles.content}
           refreshControl={
@@ -99,19 +131,39 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
+  },
+  locationContainer: {
+    flex: 1,
+  },
+  locationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   headerLocation: {
     color: 'rgba(255,255,255,0.8)',
     fontSize: 14,
+    marginLeft: 4,
+  },
+  locationDetails: {
     marginBottom: 4,
   },
   headerTitle: {
     color: '#FFF',
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '600',
+    marginBottom: 2,
+  },
+  headerSubtitle: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 16,
+  },
+  currentTime: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
   },
   refreshButton: {
     width: 40,
