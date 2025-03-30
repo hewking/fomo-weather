@@ -1,23 +1,24 @@
 import React from 'react';
-import { View } from 'react-native';
 import { LineChart } from 'react-native-svg-charts';
+import { StyledView } from '../../styles/global';
 import { WeatherData } from '../../types/weather';
 
-interface Props {
+interface WeatherChartProps {
   data: WeatherData[];
 }
 
-export const WeatherChart: React.FC<Props> = ({ data }) => {
-  const chartData = data.map(item => item.temperature);
+export function WeatherChart({ data }: WeatherChartProps) {
+  const temperatures = data.map(d => d.temperature);
+  const timestamps = data.map(d => d.timestamp);
 
   return (
-    <View className="h-64 w-full bg-white rounded-lg p-4 shadow-sm">
+    <StyledView className="h-64 w-full bg-white rounded-lg p-4 shadow-sm">
       <LineChart
-        data={chartData}
-        svg={{ stroke: '#007AFF' }}
         style={{ height: 200 }}
+        data={temperatures}
+        svg={{ stroke: '#007AFF' }}
         contentInset={{ top: 20, bottom: 20 }}
       />
-    </View>
+    </StyledView>
   );
-}; 
+} 

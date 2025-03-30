@@ -1,9 +1,20 @@
 export interface WeatherData {
   temperature: number;
+  humidity?: number;
+  windSpeed?: number;
   timestamp: string;
   location: {
     latitude: number;
     longitude: number;
+  };
+  timezone: {
+    name: string;
+    abbreviation: string;
+    offsetSeconds: number;
+  };
+  hourlyForecast: {
+    time: Date[];
+    temperature2m: Float32Array | number[];
   };
 }
 

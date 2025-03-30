@@ -2,35 +2,40 @@ const createExpoWebpackConfigAsync = require('@expo/webpack-config');
 const path = require('path');
 
 module.exports = async function (env, argv) {
-  const config = await createExpoWebpackConfigAsync(env, argv);
+  const config = await createExpoWebpackConfigAsync({
+    ...env,
+    babel: {
+      dangerouslyAddModulePathsToTranspile: [
+        'nativewind',
+        // 添加其他需要转译的模块
+      ]
+    }
+  }, argv);
   
-  // 自定义配置
-  config.resolve.alias = {
-    ...config.resolve.alias,
-    '@': path.resolve(__dirname, './src'),
-    crypto: 'crypto-browserify',
-    stream: 'stream-browserify',
-    buffer: 'buffer',
-    util: 'util',
-    assert: 'assert',
-    http: 'stream-http',
-    https: 'https-browserify',
-    os: 'os-browserify',
-    url: 'url',
-  };
-
-  // 添加 fallback 配置
+  // Add fallbacks for node modules
   config.resolve.fallback = {
     ...config.resolve.fallback,
     crypto: require.resolve('crypto-browserify'),
     stream: require.resolve('stream-browserify'),
-    buffer: require.resolve('buffer'),
-    util: require.resolve('util'),
-    assert: require.resolve('assert'),
     http: require.resolve('stream-http'),
     https: require.resolve('https-browserify'),
     os: require.resolve('os-browserify'),
     url: require.resolve('url'),
+    assert: require.resolve('assert'),
+    buffer: require.resolve('buffer'),
+    util: require.resolve('util'),
+    vm: require.resolve('vm-browserify'),
+    path: require.resolve('path-browserify'),
+    fs: false,
+    net: false,
+    tls: false,
+  };
+
+  // 添加 web 平台的别名
+  config.resolve.alias = {
+    ...config.resolve.alias,
+    'react-native$': 'react-native-web',
+    'react-native-svg': 'react-native-svg-web',
   };
 
   return config;
