@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, RefreshControl, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { WeatherChart } from '../../components/WeatherChart';
 import { WeatherTable } from '../../components/WeatherTable';
 import { CurrentWeather } from '../../components/CurrentWeather';
@@ -20,45 +22,79 @@ export default function WeatherScreen() {
     fetchWeather();
   }, []);
 
+  const getTimeBasedColors = () => {
+    const hour = new Date().getHours();
+    if (hour >= 6 && hour < 12) {
+      // Morning: Warm sunrise colors
+      return ['#FF8C42', '#FFB566', '#FFF1E6'];
+    } else if (hour >= 12 && hour < 18) {
+      // Afternoon: Blue sky colors
+      return ['#4A90E2', '#81C3F5', '#C4E3FF'];
+    } else if (hour >= 18 && hour < 20) {
+      // Evening: Sunset colors
+      return ['#FF5F6D', '#FFC371', '#FFE4B5'];
+    } else {
+      // Night: Dark blue colors
+      return ['#2C3E50', '#3498DB', '#85C1E9'];
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" />
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Weather</Text>
-        <TouchableOpacity style={styles.refreshButton} onPress={fetchWeather}>
-          <Text style={styles.refreshButtonText}>Refresh</Text>
-        </TouchableOpacity>
-      </View>
-      <ScrollView
-        refreshControl={
-          <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />
-        }
-      >
-        {isLoading ? (
-          <WeatherSkeleton />
-        ) : error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={fetchWeather}>
-              <Text style={styles.retryButtonText}>Try Again</Text>
-            </TouchableOpacity>
+    <LinearGradient 
+      colors={getTimeBasedColors()}
+      style={styles.backgroundGradient}
+    >
+      <StatusBar style="light" />
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.headerLocation}>Current Location</Text>
+            <Text style={styles.headerTitle}>San Francisco</Text>
           </View>
-        ) : (
-          <>
-            <CurrentWeather />
-            <WeatherChart />
-            <WeatherTable />
-          </>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+          <TouchableOpacity style={styles.refreshButton} onPress={fetchWeather}>
+            <MaterialCommunityIcons name="refresh" size={24} color="#FFF" />
+          </TouchableOpacity>
+        </View>
+        <ScrollView
+          style={styles.content}
+          refreshControl={
+            <RefreshControl 
+              refreshing={isLoading} 
+              onRefresh={onRefresh}
+              tintColor="#FFF"
+            />
+          }
+        >
+          {isLoading ? (
+            <WeatherSkeleton />
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={fetchWeather}>
+                <Text style={styles.retryButtonText}>Try Again</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.weatherContent}>
+              <CurrentWeather />
+              <WeatherChart />
+              <WeatherTable />
+            </View>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  backgroundGradient: {
+    flex: 1,
+    width: '100%',
+  },
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: 'rgba(0,0,0,0.1)',
   },
   header: {
     flexDirection: 'row',
@@ -66,52 +102,53 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+  },
+  headerLocation: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 14,
+    marginBottom: 4,
   },
   headerTitle: {
-    ...theme.typography.h2,
-    color: theme.colors.text,
-  },
-  refreshButton: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.layout.borderRadius,
-  },
-  refreshButtonText: {
-    ...theme.typography.body,
-    color: theme.colors.background,
+    color: '#FFF',
+    fontSize: 24,
     fontWeight: '600',
   },
-  loadingContainer: {
-    flex: 1,
+  refreshButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 400,
+  },
+  content: {
+    flex: 1,
+  },
+  weatherContent: {
+    padding: theme.spacing.sm,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 400,
     padding: theme.spacing.lg,
+    marginTop: 100,
   },
   errorText: {
-    ...theme.typography.body,
-    color: theme.colors.error,
-    marginBottom: theme.spacing.md,
+    color: '#FFF',
+    fontSize: 16,
     textAlign: 'center',
+    marginBottom: theme.spacing.md,
   },
   retryButton: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
     borderRadius: theme.layout.borderRadius,
   },
   retryButtonText: {
-    ...theme.typography.body,
-    color: theme.colors.background,
+    color: '#FFF',
+    fontSize: 16,
     fontWeight: '600',
   },
 });
