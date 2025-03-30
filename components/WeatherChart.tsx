@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Dimensions, StyleSheet, TouchableOpacity, Text, Animated } from 'react-native';
+import { View, Dimensions, StyleSheet, TouchableOpacity, Text, Animated, ScrollView } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { useWeatherStore } from '../store/weatherStore';
 import { theme } from '../constants/theme';
@@ -35,20 +35,24 @@ export function WeatherChart() {
 
   if (!weatherData) return null;
 
+  // 只显示24小时的数据
+  const timeLabels = weatherData.hourly.time.slice(0, 24).map((time) => 
+    new Date(time).toLocaleTimeString([], { hour: '2-digit' })
+  );
+  const tempData = weatherData.hourly.temperature_2m.slice(0, 24);
+
   const data = {
-    labels: weatherData.hourly.time.map((time) => 
-      new Date(time).toLocaleTimeString([], { hour: '2-digit' })
-    ),
+    labels: timeLabels,
     datasets: [{
-      data: weatherData.hourly.temperature_2m,
-      color: (opacity = 1) => `rgba(65, 145, 255, ${opacity})`, // 蓝色主色调
+      data: tempData,
+      color: (opacity = 1) => `rgba(65, 145, 255, ${opacity})`,
       strokeWidth: 2,
     }],
   };
 
-  const selectedTemp = weatherData.hourly.temperature_2m[selectedIndex];
+  const selectedTemp = tempData[selectedIndex];
   const selectedTime = weatherData.hourly.time[selectedIndex];
-  const nextTemp = weatherData.hourly.temperature_2m[selectedIndex + 1] || selectedTemp;
+  const nextTemp = tempData[selectedIndex + 1] || selectedTemp;
   const tempDiff = nextTemp - selectedTemp;
   const tempTrend = tempDiff > 0 ? '↑' : tempDiff < 0 ? '↓' : '→';
 
@@ -88,53 +92,59 @@ export function WeatherChart() {
             </Text>
           </TouchableOpacity>
         </View>
-        <LineChart
-          data={data}
-          width={chartWidth}
-          height={200}
-          withHorizontalLines={true}
-          withVerticalLines={false}
-          withDots={true}
-          withShadow={false}
-          withInnerLines={false}
-          withOuterLines={true}
-          chartConfig={{
-            backgroundColor: 'transparent',
-            backgroundGradientFrom: theme.colors.background,
-            backgroundGradientTo: theme.colors.background,
-            backgroundGradientFromOpacity: 1,
-            backgroundGradientToOpacity: 0.5,
-            decimalPlaces: 1,
-            color: (opacity = 1) => `rgba(65, 145, 255, ${opacity})`,
-            labelColor: (opacity = 0.5) => `rgba(0, 0, 0, ${opacity})`,
-            style: {
-              borderRadius: 16,
-            },
-            propsForDots: {
-              r: '4',
-              strokeWidth: '2',
-              stroke: '#4191FF',
-            },
-            propsForBackgroundLines: {
-              strokeWidth: 1,
-              strokeDasharray: '6,3',
-              stroke: 'rgba(0,0,0,0.1)',
-            },
-            fillShadowGradientFrom: '#4191FF',
-            fillShadowGradientFromOpacity: 0.3,
-            fillShadowGradientTo: '#4191FF',
-            fillShadowGradientToOpacity: 0.01,
-          }}
-          bezier
-          style={styles.chart}
-          onDataPointClick={({ index }) => handleDataPointPress(index)}
-          getDotProps={(value, index) => ({
-            r: index === selectedIndex ? '6' : '4',
-            strokeWidth: index === selectedIndex ? '3' : '2',
-            stroke: index === selectedIndex ? '#1E90FF' : '#4191FF',
-            fill: '#FFF',
-          })}
-        />
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chartContainer}
+        >
+          <LineChart
+            data={data}
+            width={Math.max(chartWidth, timeLabels.length * 40)}
+            height={200}
+            withHorizontalLines={true}
+            withVerticalLines={false}
+            withDots={true}
+            withShadow={false}
+            withInnerLines={false}
+            withOuterLines={true}
+            chartConfig={{
+              backgroundColor: 'transparent',
+              backgroundGradientFrom: theme.colors.background,
+              backgroundGradientTo: theme.colors.background,
+              backgroundGradientFromOpacity: 1,
+              backgroundGradientToOpacity: 0.5,
+              decimalPlaces: 1,
+              color: (opacity = 1) => `rgba(65, 145, 255, ${opacity})`,
+              labelColor: (opacity = 0.5) => `rgba(0, 0, 0, ${opacity})`,
+              style: {
+                borderRadius: 16,
+              },
+              propsForDots: {
+                r: '4',
+                strokeWidth: '2',
+                stroke: '#4191FF',
+              },
+              propsForBackgroundLines: {
+                strokeWidth: 1,
+                strokeDasharray: '6,3',
+                stroke: 'rgba(0,0,0,0.1)',
+              },
+              fillShadowGradientFrom: '#4191FF',
+              fillShadowGradientFromOpacity: 0.3,
+              fillShadowGradientTo: '#4191FF',
+              fillShadowGradientToOpacity: 0.01,
+            }}
+            bezier
+            style={styles.chart}
+            onDataPointClick={({ index }) => handleDataPointPress(index)}
+            getDotProps={(value, index) => ({
+              r: index === selectedIndex ? '6' : '4',
+              strokeWidth: index === selectedIndex ? '3' : '2',
+              stroke: index === selectedIndex ? '#1E90FF' : '#4191FF',
+              fill: '#FFF',
+            })}
+          />
+        </ScrollView>
         <View style={styles.selectedTemp}>
           <Text style={styles.selectedTempValue}>
             {selectedTemp.toFixed(1)}°C
@@ -151,6 +161,20 @@ export function WeatherChart() {
                 minute: '2-digit',
               })}
             </Text>
+          </View>
+        </View>
+        <View style={styles.legend}>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#4191FF' }]} />
+            <Text style={styles.legendText}>Temperature</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#FF6B6B' }]} />
+            <Text style={styles.legendText}>Rising</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, { backgroundColor: '#4ECDC4' }]} />
+            <Text style={styles.legendText}>Falling</Text>
           </View>
         </View>
       </Animated.View>
@@ -189,6 +213,9 @@ const styles = StyleSheet.create({
     color: '#4191FF',
     fontSize: 14,
   },
+  chartContainer: {
+    paddingRight: theme.spacing.sm,
+  },
   chart: {
     marginVertical: theme.spacing.xs,
     borderRadius: theme.layout.borderRadius,
@@ -216,6 +243,30 @@ const styles = StyleSheet.create({
   selectedTempLabel: {
     ...theme.typography.caption,
     color: 'rgba(0,0,0,0.5)',
+    fontSize: 12,
+  },
+  legend: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: theme.spacing.md,
+    flexWrap: 'wrap',
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: theme.spacing.sm,
+    marginVertical: theme.spacing.xs,
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: theme.spacing.xs,
+  },
+  legendText: {
+    ...theme.typography.caption,
+    color: 'rgba(0,0,0,0.7)',
     fontSize: 12,
   },
 }); 
