@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "fomo-weather",
+    "name": "FOMO Weather",
     "slug": "fomo-weather",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,31 +16,35 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "newArchEnabled": true
+      "bundleIdentifier": "com.fomo.weather",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We need your location to show you local weather information.",
+        "NSLocationAlwaysUsageDescription": "We need your location to show you local weather information."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "newArchEnabled": true
+      "package": "com.fomo.weather",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "webpack"
+      "favicon": "./assets/favicon.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "0b84f9e4-cfad-41e0-a318-85ea32262e46"
-      }
-    },
-    "owner": "jianhao",
-    "scheme": "fomo-weather",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow FOMO Weather to use your location to show you local weather information."
+        }
+      ]
     ],
-    "experiments": {
-      "tsconfigPaths": true
-    }
+    "scheme": "fomo-weather"
   }
 }

@@ -1,24 +1,47 @@
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { initialWindowMetrics } from 'react-native-safe-area-context';
+import { useEffect } from 'react';
+import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-const queryClient = new QueryClient();
+import { useColorScheme } from '@/hooks/useColorScheme';
 
-export default function Layout() {
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync();
+
+export default function RootLayout() {
+  const colorScheme = useColorScheme();
+  const [loaded] = useFonts({
+    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+  });
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <SafeAreaProvider>
+    <SafeAreaProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack>
+          <Stack.Screen
+            name="(tabs)"
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen name="+not-found" />
+        </Stack>
         <StatusBar style="auto" />
-        <Stack
-          screenOptions={{
-            headerShown: true,
-            title: 'Weather App',
-            contentStyle: { backgroundColor: 'white' }
-          }}
-        />
-      </SafeAreaProvider>
-    </QueryClientProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
-} 
+}
